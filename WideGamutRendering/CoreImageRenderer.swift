@@ -17,7 +17,7 @@ class CoreImageRenderer: NSObject {
     var image: CIImage?
 
     let extendedColorSpace: CGColorSpace = {
-        guard let cs = CGColorSpace(name: CGColorSpace.extendedLinearSRGB) else {
+        guard let cs = CGColorSpace(name: CGColorSpace.extendedSRGB) else {
             preconditionFailure("Couldn't create an extended linear SRGB color space.")
         }
 
@@ -45,8 +45,7 @@ class CoreImageRenderer: NSObject {
         self.commandQueue = commandQueue
 
         let context = CIContext(mtlDevice: device, options: [.workingFormat: CIFormat.RGBAh,
-                                                             .workingColorSpace: displayP3ColorSpace,
-                                                             .outputColorSpace: extendedColorSpace])
+                                                             .workingColorSpace: displayP3ColorSpace])
         self.context = context
     }
 }
@@ -62,7 +61,7 @@ extension MetalViewDelegate: MTKViewDelegate {
 
         guard let commandBuffer = commandQueue.makeCommandBuffer(), let drawable = view.currentDrawable else { return }
 
-        let destination = CIRenderDestination(width: Int(view.drawableSize.width), height: Int(view.drawableSize.height), pixelFormat: .rgba16Float, commandBuffer: commandBuffer) { () -> MTLTexture in
+        let destination = CIRenderDestination(width: Int(view.drawableSize.width), height: Int(view.drawableSize.height), pixelFormat: view.colorPixelFormat, commandBuffer: commandBuffer) { () -> MTLTexture in
             return drawable.texture
         }
         destination.colorSpace = extendedColorSpace
