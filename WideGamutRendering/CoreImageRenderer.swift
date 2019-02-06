@@ -59,17 +59,28 @@ extension MetalViewDelegate: MTKViewDelegate {
             let commandQueue = commandQueue,
             let image = image else { return }
 
+        let scale = max(view.drawableSize.width / image.extent.width,
+                        view.drawableSize.height / image.extent.height)
+        let tx = (view.drawableSize.width - scale * image.extent.width) / 2.0
+        let ty = (view.drawableSize.height - scale * image.extent.height) / 2.0
+        let t = CGAffineTransform(translationX: tx, y: ty).scaledBy(x: scale, y: scale)
+        let scaledImage = image.applyingFilter("CIAffineTransform", parameters: [kCIInputTransformKey: t])
+
         guard let commandBuffer = commandQueue.makeCommandBuffer(), let drawable = view.currentDrawable else { return }
 
-        let destination = CIRenderDestination(width: Int(view.drawableSize.width), height: Int(view.drawableSize.height), pixelFormat: view.colorPixelFormat, commandBuffer: commandBuffer) { () -> MTLTexture in
-            return drawable.texture
-        }
-        destination.colorSpace = extendedColorSpace
+        if view.colorPixelFormat == .bgra10_xr || view.colorPixelFormat == .bgra10_xr_srgb { // This pixel formats are not supported by the CIRenderDestination
+            context.render(scaledImage, to: drawable.texture, commandBuffer: commandBuffer, bounds: CGRect(origin: .zero, size: view.drawableSize), colorSpace: extendedColorSpace)
+        } else {
+            let destination = CIRenderDestination(width: Int(view.drawableSize.width), height: Int(view.drawableSize.height), pixelFormat: view.colorPixelFormat, commandBuffer: commandBuffer) { () -> MTLTexture in
+                return drawable.texture
+            }
+            destination.colorSpace = extendedColorSpace
 
-        do {
-            try context.startTask(toRender: image, to: destination)
-        } catch {
-            print("Couldn't render to a CIRenderDestination.")
+            do {
+                try context.startTask(toRender: scaledImage, to: destination)
+            } catch {
+                print("Couldn't render to a CIRenderDestination.")
+            }
         }
 
         commandBuffer.present(drawable)

@@ -13,9 +13,35 @@ class ViewController: UIViewController {
 
     // MARK: - Properties
 
+    private lazy var colorImage: CIImage = {
+        guard let redColor = CIColor(red: 1.0, green: 0.0, blue: 0.0, colorSpace: extendedRangeRenderer.displayP3ColorSpace) else {
+            preconditionFailure("Couldn't creat a Core Image color with \(extendedRangeRenderer.displayP3ColorSpace) color space.")
+        }
+
+        let screenSizeInPixels = CGSize(width: UIScreen.main.bounds.width * UIScreen.main.scale,
+                                        height: UIScreen.main.bounds.height * UIScreen.main.scale)
+
+        return CIImage(color: redColor)
+            .cropped(to: CGRect(origin: .zero, size: screenSizeInPixels))
+    }()
+
+    private lazy var image: CIImage = {
+        guard let url = Bundle.main.url(forResource: "Iceland-P3", withExtension: "jpg") else {
+            preconditionFailure("Couldn't locate the Display P3 image in the bundle.")
+        }
+        guard let ciImage = CIImage(contentsOf: url) else {
+            preconditionFailure("Couldn't create a Core Image image from the Display P3 image data.")
+        }
+
+        return ciImage
+    }()
+
+    // MARK: Outlets
+
     @IBOutlet private weak var topMetalView: MTKView!
     @IBOutlet private weak var bottomMetalView: MTKView!
     @IBOutlet private weak var imageView: UIImageView!
+    @IBOutlet private weak var imageSelectorControl: UISegmentedControl!
 
     @IBOutlet private var extendedRangeRenderer: CoreImageRenderer!
 
@@ -34,23 +60,27 @@ class ViewController: UIViewController {
         topMetalView.delegate = extendedRangeRenderer
 
         bottomMetalView.device = device
-        bottomMetalView.colorPixelFormat = .bgra10_xr_srgb
+        bottomMetalView.colorPixelFormat = .bgra10_xr
         bottomMetalView.delegate = extendedRangeRenderer
 
         extendedRangeRenderer.setupWith(device: device, commandQueue: commandQueue)
 
-        guard let redColor = CIColor(red: 1.0, green: 0.0, blue: 0.0, colorSpace: extendedRangeRenderer.displayP3ColorSpace) else {
-            preconditionFailure("Couldn't creat a Core Image color with \(extendedRangeRenderer.displayP3ColorSpace) color space.")
+        imageSelectorControlAction(imageSelectorControl)
+    }
+
+    // MARK: Actions
+
+    @IBAction func imageSelectorControlAction(_ sender: UISegmentedControl) {
+        var image: CIImage!
+        switch sender.selectedSegmentIndex {
+        case 0: image = colorImage
+        case 1: image = self.image
+        default:
+            preconditionFailure("Unhandled segment selected")
         }
 
-        let screenSizeInPixels = CGSize(width: UIScreen.main.bounds.width * UIScreen.main.scale,
-                                        height: UIScreen.main.bounds.height * UIScreen.main.scale)
-
-        let ciImage = CIImage(color: redColor)
-            .cropped(to: CGRect(origin: .zero, size: screenSizeInPixels))
-
-        extendedRangeRenderer.image = ciImage
-        imageView.image = UIImage(ciImage: ciImage)
+        extendedRangeRenderer.image = image
+        imageView.image = UIImage(ciImage: image)
 
         topMetalView.setNeedsDisplay()
         bottomMetalView.setNeedsDisplay()
