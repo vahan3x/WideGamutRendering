@@ -5,6 +5,6 @@ A small sample project to demonstrate several implementations of `Metal` and `Co
 
 ### Screenshots
 
-<img src="Screenshots/ICELAND.HEIC">
-<img src="Screenshots/RED_IMAGE.HEIC">
-<img src="Screenshots/RED.HEIC">
+<img src="Screenshots/ICELAND.JPG">
+<img src="Screenshots/RED_IMAGE.JPG">
+<img src="Screenshots/RED.JPG">
