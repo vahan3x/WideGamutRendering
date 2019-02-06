@@ -36,6 +36,17 @@ class ViewController: UIViewController {
         return ciImage
     }()
 
+    private lazy var edgeImage: CIImage = {
+        guard let url = Bundle.main.url(forResource: "p3", withExtension: "png") else {
+            preconditionFailure("Couldn't locate the Display P3 image in the bundle.")
+        }
+        guard let ciImage = CIImage(contentsOf: url) else {
+            preconditionFailure("Couldn't create a Core Image image from the Display P3 image data.")
+        }
+
+        return ciImage
+    }()
+
     // MARK: Outlets
 
     @IBOutlet private weak var topMetalView: MTKView!
@@ -75,6 +86,7 @@ class ViewController: UIViewController {
         switch sender.selectedSegmentIndex {
         case 0: image = colorImage
         case 1: image = self.image
+        case 2: image = edgeImage
         default:
             preconditionFailure("Unhandled segment selected")
         }
